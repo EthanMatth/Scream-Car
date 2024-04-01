@@ -21,8 +21,11 @@ void ADC_start()
     ADCSRA |= (1 << ADSC); // Starts ADC
 }
 
-uint16_t ADC_analogRead()
+uint16_t ADC_analogRead(char pin)
 {
+    ADMUX &= ~(0b1111); // Clears previous pin selection
+    ADMUX |= pin; // Sets new pin to be read
+
     conversion_done = 0;
     ADC_start();
 

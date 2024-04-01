@@ -12,14 +12,19 @@ int main()
   //unsigned char adcl;
   DDRC &= ~(1 << 0);
 
-  uint16_t value;
+  uint16_t value0;
+  uint16_t value1;
 
   while(1)
   {
     
-    value = ADC_analogRead();
+    value0 = ADC_analogRead(A0);
+    value1 = ADC_analogRead(A1);
     
-    serial_int(value);
+    serial_print("Value 0: ");
+    serial_int(value0);
+    serial_print(" Value 1: ");
+    serial_int(value1);
     serial_send('\n');
     _delay_ms(100);
   }
