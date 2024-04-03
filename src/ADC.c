@@ -19,6 +19,7 @@ void ADC_init()
 void ADC_start()
 {
     ADCSRA |= (1 << ADSC); // Starts ADC
+    sei();
 }
 
 uint16_t ADC_analogRead(char pin)
