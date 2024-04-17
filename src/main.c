@@ -4,58 +4,68 @@
 #include "Serial.h"
 #include "ADC.h"
 
-uint16_t max1, max2;
-uint16_t min1, min2;
-uint16_t sample1, sample2;
-char threshold = 100;
+#define numOfSensors 4
+
+char threshold = 1;
+
+uint16_t max[] = {0, 0, 0, 0};
+uint16_t min[] = {1024, 1024, 1024, 1024};
+uint16_t sample[numOfSensors];
+
+
+void TimerSetup()
+{
+  TIMSK1 = (1 << OCIE1A);
+  TCNT1 = 0;
+  OCR1A = 6250 - 1;
+  TCCR1A = 0;
+  TCCR1B = (1 << WGM12) | (1 << CS12);
+}
 
 int main()
 {
-  DDRC &= ~(1 << 0);  
+  DDRC &= ~(0b1111 << 0); 
+  
   serial_init();
   ADC_init();
-
-  TIMSK1 = (1 << OCIE1A);
-  TCNT1 = 0;
-  OCR1A = 3125 - 1;
-  TCCR1A = 0;
-  TCCR1B = (1 << WGM12) | (1 << CS12);
-
-  max1 = max2 = 0;
-  min1 = min2 = 1024;
+  TimerSetup();
 
   while(1)
   {
-    sample1 = ADC_analogRead(A0);
-    sample2 = ADC_analogRead(A1);
-
-    if(sample1 > 1024) continue;
-    if(sample1 > max1) max1 = sample1;
-    if(sample1 < min1) min1 = sample1;
-
-    if(sample2 > 1024) continue;
-    if(sample2 > max2) max2 = sample2;
-    if(sample2 < min2) min2 = sample2;
+    for(unsigned char i = 0; i < numOfSensors; i++)
+    {
+      
+      sample[i] = ADC_analogRead(i);
+      
+      if(sample[i] > max[i]) max[i] = sample[i];
+      if(sample[i] < min[i]) min[i] = sample[i];
+    }
+  
   }
 }
 
 ISR(TIMER1_COMPA_vect)
 {
-  if((max1 - min1) > threshold)
+  for(unsigned char i = 0; i < numOfSensors; i++)
   {
-    serial_print("Level 1: ");
-    serial_int(max1 - min1);
+    if(1)
+    {
+      serial_print("Level ");
+      serial_int(i);
+      serial_print(": ");
+      serial_int(max[i] - min[i]);
+      serial_send('\t');
+    }
   }
-  if((max2 - min2) > threshold)
-  {
-    serial_print(" Level 2: ");
-    serial_int(max2 - min2);
-  }
+  
   serial_send('\n');
   TCNT1 = 0;
 
-  min1 = min2 = 1024;
-  max1 = max2 = 0;
+  for(unsigned char i = 0; i < numOfSensors; i++)
+  {
+    min[i] = 1024;
+    max[i] = 0;
+  }
 }
 
 

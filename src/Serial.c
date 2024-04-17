@@ -22,7 +22,7 @@ void serial_send(unsigned char c)
 
 void serial_print(char str[])
 {
-	char i = 0;
+	unsigned char i = 0;
 	while(str[i])
 	{
 		serial_send(str[i++]);
