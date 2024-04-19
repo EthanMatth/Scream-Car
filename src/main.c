@@ -6,7 +6,7 @@
 
 #define numOfSensors 4
 
-char threshold = 1;
+char threshold = 100;
 
 uint16_t max[] = {0, 0, 0, 0};
 uint16_t min[] = {1024, 1024, 1024, 1024};
@@ -22,9 +22,18 @@ void TimerSetup()
   TCCR1B = (1 << WGM12) | (1 << CS12);
 }
 
+void MotorControl(unsigned char dir)
+{
+  serial_int(dir); // I tried to remove these print statements and it stopped working
+  serial_send('\n');
+  if(dir > 5) return;
+  else PORTB |= (1 << dir);
+}
+
 int main()
 {
-  DDRC &= ~(0b1111 << 0); 
+  DDRC &= ~(0b1111); 
+  DDRB |= (0b1111);
   
   serial_init();
   ADC_init();
@@ -46,26 +55,28 @@ int main()
 
 ISR(TIMER1_COMPA_vect)
 {
+  PORTB = 0x00;
+  char loudestSensor = -1;
+  uint16_t loudest = 0;
   for(unsigned char i = 0; i < numOfSensors; i++)
   {
-    if(1)
-    {
-      serial_print("Level ");
-      serial_int(i);
-      serial_print(": ");
-      serial_int(max[i] - min[i]);
-      serial_send('\t');
-    }
+    uint16_t noise = max[i] - min[i];
+    if(noise < threshold) continue;
+    if(noise < loudest) continue;
+    loudest = noise;
+    loudestSensor = i;
   }
-  
-  serial_send('\n');
-  TCNT1 = 0;
 
-  for(unsigned char i = 0; i < numOfSensors; i++)
+  MotorControl(loudestSensor);
+
+
+ for(unsigned char i = 0; i < numOfSensors; i++)
   {
     min[i] = 1024;
     max[i] = 0;
   }
+
+  TCNT1 = 0;
 }
 
 
